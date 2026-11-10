@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
-import '../models/health_tip.dart';
-import '../providers/health_provider.dart';
-import '../repositories/health_repository.dart';
-import '../repositories/health_repository_impl.dart';
+import '../models/study_tip.dart';
+import '../providers/task_provider.dart';
+import '../repositories/article_repository.dart';
+import '../repositories/article_repository_impl.dart';
 import '../services/secure_storage_service.dart';
-import '../widgets/health_tip_card.dart';
+import '../widgets/study_tip_card.dart';
+import '../widgets/task_card.dart';
+import 'add_task_screen.dart';
 import 'login_screen.dart';
-import 'profile_form_screen.dart';
+import 'profile_screen.dart';
 
-/// Halaman utama (Dashboard) aplikasi kesehatan dan pemantauan hidrasi.
+/// Halaman Dashboard utama aplikasi Manajemen Tugas & Akademik Mahasiswa.
 ///
 /// Mengintegrasikan:
-/// - State Management via [HealthProvider] (Pertemuan 4)
-/// - Persistensi preferensi & hidrasi via SharedPreferences (Pertemuan 4)
+/// - State Management via [TaskProvider] (Pertemuan 4)
+/// - Persistensi profil & daftar tugas via [SharedPreferences] (Pertemuan 4)
 /// - REST API dengan Repository Pattern & 3-state UI (Pertemuan 5 & 6)
-/// - Pencarian tips kesehatan secara real-time (Latihan Modul 5)
-/// - Penyimpanan tips favorit (Latihan Modul 4)
+/// - Pencarian tips belajar secara real-time (Latihan Modul 5)
+/// - Bookmark artikel favorit (Latihan Modul 4)
 /// - Manajemen sesi dan token aman via Secure Storage (Pertemuan 5)
 class HomeScreen extends StatefulWidget {
-  final HealthRepository? repository;
+  final ArticleRepository? repository;
   const HomeScreen({super.key, this.repository});
 
   @override
@@ -26,21 +28,22 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final HealthRepository _repository;
+  late final ArticleRepository _repository;
   final SecureStorageService _storageService = SecureStorageService();
 
-  List<HealthTip> _allTips = [];
-  List<HealthTip> _filteredTips = [];
+  List<StudyTip> _allTips = [];
+  List<StudyTip> _filteredTips = [];
   bool _isLoading = true;
   String? _errorMessage;
 
   final TextEditingController _searchController = TextEditingController();
   bool _showOnlyFavorites = false;
+  String _taskFilter = 'Semua'; // 'Semua', 'Belum', 'Selesai'
 
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? HealthRepositoryImpl();
+    _repository = widget.repository ?? ArticleRepositoryImpl();
     _fetchTips();
   }
 
@@ -50,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  /// Memuat daftar tips kesehatan dari REST API melalui Repository.
+  /// Memuat artikel tips belajar dari REST API melalui Repository (Pertemuan 5 & 6).
   Future<void> _fetchTips() async {
     setState(() {
       _isLoading = true;
@@ -58,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      final tips = await _repository.fetchHealthTips();
+      final tips = await _repository.fetchStudyTips();
       setState(() {
         _allTips = tips;
         _isLoading = false;
@@ -72,10 +75,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Memfilter data tips berdasarkan query pencarian dan tab favorit.
+  /// Memfilter data tips berdasarkan kata kunci pencarian dan tab favorit.
   void _applyFilter() {
     final query = _searchController.text.trim().toLowerCase();
-    final provider = HealthProvider.of(context);
+    final provider = TaskProvider.of(context);
 
     setState(() {
       _filteredTips = _allTips.where((tip) {
@@ -94,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Konfirmasi Logout'),
         content: const Text(
-          'Apakah Anda yakin ingin keluar? Token autentikasi di secure storage akan dihapus.',
+          'Apakah Anda yakin ingin keluar? Token sesi di secure storage akan dihapus.',
         ),
         actions: [
           TextButton(
@@ -120,8 +123,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Menampilkan detail tips kesehatan di modal bottom sheet (Materi Pertemuan 5).
-  void _showTipDetail(HealthTip tip) {
+  /// Menampilkan detail lengkap tips belajar di modal bottom sheet (Materi Pertemuan 5).
+  void _showTipDetail(StudyTip tip) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -152,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  const Icon(Icons.health_and_safety, color: Colors.teal, size: 28),
+                  const Icon(Icons.school, color: Colors.indigo, size: 28),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -164,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const Divider(height: 24),
               const Text(
-                'Deskripsi & Saran Medis:',
+                'Ringkasan Materi & Tips:',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
@@ -184,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: tip.tags
                       .map((tag) => Chip(
                             label: Text('#$tag'),
-                            backgroundColor: Colors.teal.shade50,
+                            backgroundColor: Colors.indigo.shade50,
                           ))
                       .toList(),
                 ),
@@ -195,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
+                    backgroundColor: Colors.indigo,
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Tutup'),
@@ -210,26 +213,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = HealthProvider.of(context);
+    final provider = TaskProvider.of(context);
 
-    // Hitung persentase target hidrasi air
-    final target = provider.user.dailyWaterTargetMl;
-    final double hydrationProgress =
-        target > 0 ? (provider.currentWaterIntake / target).clamp(0.0, 1.0) : 0.0;
+    // Filter daftar tugas sesuai tab
+    final displayedTasks = provider.tasks.where((t) {
+      if (_taskFilter == 'Selesai') return t.isCompleted;
+      if (_taskFilter == 'Belum') return !t.isCompleted;
+      return true;
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Halo, ${provider.userName}', style: const TextStyle(fontSize: 18)),
+            Text('Halo, ${provider.profile.name}', style: const TextStyle(fontSize: 17)),
             Text(
-              'Target: $target ml/hari • Buka: ke-${provider.visitCount}',
+              'NIM: ${provider.profile.nim} • Semester ${provider.profile.semester} • Buka: ke-${provider.visitCount}',
               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400),
             ),
           ],
         ),
-        backgroundColor: Colors.teal,
+        backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -239,10 +244,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.account_circle),
-            tooltip: 'Profil Kesehatan',
+            tooltip: 'Profil Mahasiswa',
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ProfileFormScreen()),
+              MaterialPageRoute(builder: (context) => const ProfileScreen()),
             ),
           ),
           IconButton(
@@ -252,12 +257,22 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AddTaskScreen()),
+        ),
+        icon: const Icon(Icons.add),
+        label: const Text('Tambah Tugas'),
+      ),
       body: RefreshIndicator(
         onRefresh: _fetchTips,
         child: ListView(
-          padding: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.only(bottom: 80),
           children: [
-            // Card Pelacak Hidrasi Air Harian (Materi Pertemuan 4)
+            // Card Progres Tugas Semester Ini (Materi Pertemuan 4)
             Card(
               margin: const EdgeInsets.all(16),
               elevation: 2,
@@ -271,19 +286,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.water_drop, color: Colors.blueAccent, size: 28),
+                            Icon(Icons.assignment_turned_in, color: Colors.indigo, size: 28),
                             SizedBox(width: 8),
                             Text(
-                              'Pelacak Hidrasi Air',
+                              'Progres Tugas Kuliah',
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
                         Text(
-                          '${(hydrationProgress * 100).toInt()}%',
+                          '${(provider.taskProgress * 100).toInt()}%',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.blueAccent,
+                            color: Colors.indigo,
+                            fontSize: 16,
                           ),
                         ),
                       ],
@@ -292,35 +308,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: LinearProgressIndicator(
-                        value: hydrationProgress,
+                        value: provider.taskProgress,
                         minHeight: 10,
                         backgroundColor: Colors.grey.shade200,
-                        color: Colors.blueAccent,
+                        color: Colors.indigo,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      '${provider.currentWaterIntake} ml / $target ml tercapai',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 8,
-                      alignment: WrapAlignment.center,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        ElevatedButton.icon(
-                          onPressed: () => provider.addWater(250),
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text('+ 250 ml'),
+                        Text(
+                          '${provider.completedTaskCount} dari ${provider.totalTaskCount} tugas selesai',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                         ),
-                        ElevatedButton.icon(
-                          onPressed: () => provider.addWater(500),
-                          icon: const Icon(Icons.add, size: 16),
-                          label: const Text('+ 500 ml'),
-                        ),
-                        OutlinedButton(
-                          onPressed: provider.resetWater,
-                          child: const Text('Reset'),
+                        Text(
+                          'Target: ${provider.profile.targetSks} SKS',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
                         ),
                       ],
                     ),
@@ -329,14 +333,101 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Header Bagian REST API & Filter
+            // Section Daftar Tugas Mahasiswa
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Daftar Tugas Kuliah',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                  ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Baru'),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AddTaskScreen()),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Filter Chips Tugas (Semua, Belum, Selesai)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                children: [
+                  ChoiceChip(
+                    label: Text('Semua (${provider.totalTaskCount})'),
+                    selected: _taskFilter == 'Semua',
+                    onSelected: (val) {
+                      if (val) setState(() => _taskFilter = 'Semua');
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: Text('Belum (${provider.totalTaskCount - provider.completedTaskCount})'),
+                    selected: _taskFilter == 'Belum',
+                    onSelected: (val) {
+                      if (val) setState(() => _taskFilter = 'Belum');
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: Text('Selesai (${provider.completedTaskCount})'),
+                    selected: _taskFilter == 'Selesai',
+                    onSelected: (val) {
+                      if (val) setState(() => _taskFilter = 'Selesai');
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Render Daftar Tugas
+            if (displayedTasks.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.task_alt, size: 48, color: Colors.grey.shade400),
+                      const SizedBox(height: 8),
+                      Text(
+                        _taskFilter == 'Semua'
+                            ? 'Belum ada tugas kuliah. Klik "Tambah Tugas" untuk membuat baru!'
+                            : 'Tidak ada tugas berstatus "$_taskFilter".',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ...displayedTasks.map((task) {
+                return TaskCard(
+                  task: task,
+                  onToggleStatus: () => provider.toggleTaskStatus(task.id),
+                  onDelete: () => provider.deleteTask(task.id),
+                );
+              }),
+
+            const Divider(height: 36, thickness: 1),
+
+            // Header Bagian REST API Tips Belajar & Filter
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Tips Kesehatan Terkini (REST API)',
+                    'Tips Belajar & Produktivitas (REST API)',
                     style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
@@ -345,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     controller: _searchController,
                     onChanged: (_) => _applyFilter(),
                     decoration: InputDecoration(
-                      hintText: 'Cari tips kesehatan...',
+                      hintText: 'Cari tips belajar & manajemen waktu...',
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
@@ -401,7 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTipsSection(HealthProvider provider) {
+  Widget _buildTipsSection(TaskProvider provider) {
     if (_isLoading) {
       return const Center(
         child: Padding(
@@ -410,7 +501,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 12),
-              Text('Memuat tips kesehatan dari API...'),
+              Text('Memuat tips belajar dari REST API...'),
             ],
           ),
         ),
@@ -450,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Icon(Icons.search_off, size: 48, color: Colors.grey.shade400),
               const SizedBox(height: 8),
-              const Text('Tidak ada tips kesehatan yang cocok.'),
+              const Text('Tidak ada artikel tips yang cocok.'),
             ],
           ),
         ),
@@ -462,7 +553,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final tipIdStr = tip.id.toString();
         final isFav = provider.isFavorite(tipIdStr);
 
-        return HealthTipCard(
+        return StudyTipCard(
           tip: tip,
           isFavorite: isFav,
           onFavoriteToggle: () {

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
-import '../models/health_tip.dart';
+import '../models/study_tip.dart';
 
 /// Exception khusus untuk kesalahan komunikasi HTTP.
 class HttpException implements Exception {
@@ -17,8 +17,8 @@ class HttpException implements Exception {
 
 /// Service komunikasi jaringan REST API.
 ///
-/// Bertanggung jawab menangani request HTTP, penambahan header keamanan,
-/// safe logging, serta penanganan error koneksi (Materi Pertemuan 5 & 6).
+/// Bertanggung jawab mengambil data artikel tips belajar dan produktivitas,
+/// menambahkan header keamanan, safe logging, dan menangani error (Pertemuan 5 & 6).
 class ApiService {
   final http.Client _client;
   final String _baseUrl;
@@ -45,8 +45,8 @@ class ApiService {
     print('Response status code: $statusCode');
   }
 
-  /// Mengambil daftar tips kesehatan dari endpoint /posts.
-  Future<List<HealthTip>> getHealthTips() async {
+  /// Mengambil daftar tips belajar & produktivitas dari endpoint /posts.
+  Future<List<StudyTip>> getStudyTips() async {
     const endpoint = '/posts';
     final uri = Uri.parse('$_baseUrl$endpoint');
 
@@ -71,10 +71,10 @@ class ApiService {
           list = [];
         }
 
-        return list.map((item) => HealthTip.fromJson(item as Map<String, dynamic>)).toList();
+        return list.map((item) => StudyTip.fromJson(item as Map<String, dynamic>)).toList();
       } else {
         throw HttpException(
-          'Gagal memuat data kesehatan dari server (Status: ${response.statusCode})',
+          'Gagal memuat tips belajar dari server (Status: ${response.statusCode})',
           response.statusCode,
         );
       }

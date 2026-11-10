@@ -4,10 +4,11 @@ import '../utils/validators.dart';
 import '../widgets/custom_text_field.dart';
 import 'home_screen.dart';
 
-/// Halaman Login & Registrasi aplikasi kesehatan (Materi Pertemuan 3 & 5).
+/// Halaman Login Mahasiswa ke Portal Manajemen Tugas (Materi Pertemuan 3 & 5).
 ///
-/// Menerapkan form handling dengan validasi real-time, kalkulasi kekuatan password,
-/// checkbox persetujuan syarat & ketentuan, serta penyimpanan token terenkripsi.
+/// Menerapkan form handling dengan validasi regex email, kriteria password,
+/// toggle visibility (obscureText), indikator kekuatan password,
+/// checkbox tata tertib akademik, serta penyimpanan token sesi terenkripsi AES-256.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -23,8 +24,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
-  bool _agreeToTerms = false;
-  bool _showTermsError = false;
+  bool _agreeToRules = false;
+  bool _showRulesError = false;
   double _passwordStrength = 0.0;
 
   @override
@@ -54,13 +55,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _submitLogin() async {
     setState(() {
-      _showTermsError = !_agreeToTerms;
+      _showRulesError = !_agreeToRules;
     });
 
-    if (!_agreeToTerms) {
+    if (!_agreeToRules) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Anda wajib menyetujui syarat & ketentuan kesehatan!'),
+          content: Text('Anda wajib menyetujui tata tertib akademik portal!'),
           backgroundColor: Colors.red,
         ),
       );
@@ -72,11 +73,11 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = true;
       });
 
-      // Simulasi autentikasi API
+      // Simulasi request login ke server akademik
       await Future.delayed(const Duration(seconds: 1));
 
-      // Simpan dummy auth token ke Secure Storage (Terenkripsi AES)
-      final dummyToken = 'jwt_token_${DateTime.now().millisecondsSinceEpoch}';
+      // Simpan token sesi autentikasi ke Secure Storage (Terenkripsi AES-256)
+      final dummyToken = 'mhs_jwt_${DateTime.now().millisecondsSinceEpoch}';
       await _secureStorage.saveToken(dummyToken);
 
       setState(() {
@@ -91,17 +92,18 @@ class _LoginScreenState extends State<LoginScreen> {
         builder: (ctx) => AlertDialog(
           title: const Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.teal),
+              Icon(Icons.check_circle, color: Colors.indigo),
               SizedBox(width: 8),
-              Text('Login Berhasil'),
+              Text('Autentikasi Berhasil'),
             ],
           ),
           content: Text(
-            'Selamat datang kembali!\nEmail: ${_emailController.text.trim()}\n'
-            'Token autentikasi aman tersimpan.',
+            'Selamat datang di Portal Tugas Mahasiswa!\nEmail: ${_emailController.text.trim()}\n'
+            'Token sesi aman telah disimpan.',
           ),
           actions: [
             ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
               onPressed: () {
                 Navigator.pop(ctx);
                 Navigator.pushReplacement(
@@ -109,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   MaterialPageRoute(builder: (context) => const HomeScreen()),
                 );
               },
-              child: const Text('Masuk ke Beranda'),
+              child: const Text('Buka Dashboard'),
             ),
           ],
         ),
@@ -123,8 +125,8 @@ class _LoginScreenState extends State<LoginScreen> {
     _passwordController.clear();
     setState(() {
       _passwordStrength = 0.0;
-      _agreeToTerms = false;
-      _showTermsError = false;
+      _agreeToRules = false;
+      _showRulesError = false;
     });
   }
 
@@ -132,8 +134,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Masuk Akun Kesehatan'),
-        backgroundColor: Colors.teal,
+        title: const Text('Portal Tugas & Akademik'),
+        backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
       ),
       body: Center(
@@ -145,13 +147,13 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Icon(
-                  Icons.health_and_safety,
+                  Icons.school,
                   size: 72,
-                  color: Colors.teal,
+                  color: Colors.indigo,
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Health & Hydration Portal',
+                  'Academic Task Manager',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 22,
@@ -160,23 +162,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Kelola data kesehatan dan hidrasi harian Anda secara aman',
+                  'Kelola tugas kuliah, deadline, dan tips belajar secara terorganisir',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey, fontSize: 13),
                 ),
                 const SizedBox(height: 24),
 
-                // Field Email
+                // Field Email Mahasiswa
                 CustomTextField(
                   controller: _emailController,
-                  label: 'Email Pengguna',
-                  hint: 'contoh: budi@kesehatan.id',
+                  label: 'Email Mahasiswa',
+                  hint: 'contoh: nama@students.amikom.ac.id',
                   prefixIcon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: Validators.validateEmail,
                 ),
 
-                // Field Password dengan Toggle Visibility & Kekuatan Password
+                // Field Password dengan Toggle Visibility & Indikator Kekuatan
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: TextFormField(
@@ -185,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onChanged: _onPasswordChanged,
                     validator: Validators.validatePassword,
                     decoration: InputDecoration(
-                      labelText: 'Kata Sandi',
+                      labelText: 'Kata Sandi Portal',
                       hintText: 'Minimal 8 karakter, huruf kapital & angka',
                       prefixIcon: const Icon(Icons.lock_outline),
                       border: const OutlineInputBorder(),
@@ -233,27 +235,27 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 8),
                 ],
 
-                // Checkbox S&K (Latihan 4 Pertemuan 3)
+                // Checkbox S&K Akademik (Latihan 4 Pertemuan 3)
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
-                  value: _agreeToTerms,
+                  value: _agreeToRules,
                   title: const Text(
-                    'Saya menyetujui syarat & ketentuan pelacakan data kesehatan',
+                    'Saya menyetujui integritas akademik dan tata tertib manajemen tugas',
                     style: TextStyle(fontSize: 13),
                   ),
                   controlAffinity: ListTileControlAffinity.leading,
                   onChanged: (val) {
                     setState(() {
-                      _agreeToTerms = val ?? false;
-                      if (_agreeToTerms) _showTermsError = false;
+                      _agreeToRules = val ?? false;
+                      if (_agreeToRules) _showRulesError = false;
                     });
                   },
                 ),
-                if (_showTermsError)
+                if (_showRulesError)
                   const Padding(
                     padding: EdgeInsets.only(left: 12.0),
                     child: Text(
-                      '* Wajib dicentang sebelum melanjutkan',
+                      '* Wajib disetujui sebelum masuk',
                       style: TextStyle(color: Colors.red, fontSize: 12),
                     ),
                   ),
@@ -264,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _submitLogin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
+                    backgroundColor: Colors.indigo,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
@@ -278,7 +280,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         )
                       : const Text(
-                          'Masuk',
+                          'Masuk ke Akun Mahasiswa',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                 ),

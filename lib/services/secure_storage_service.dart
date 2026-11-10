@@ -1,8 +1,8 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Service untuk mengelola penyimpanan data sensitif (token otentikasi & PIN kesehatan).
+/// Service untuk mengelola penyimpanan data sensitif akun mahasiswa (Auth Token & PIN).
 ///
-/// Menggunakan enkripsi AES-256 via [FlutterSecureStorage] pada Android (EncryptedSharedPreferences)
+/// Menggunakan enkripsi AES-256 via [FlutterSecureStorage] pada Android Keystore
 /// dan Keychain Services pada iOS (Materi Pertemuan 5).
 class SecureStorageService {
   static const _storage = FlutterSecureStorage(
@@ -14,49 +14,48 @@ class SecureStorageService {
     ),
   );
 
-  static const String _tokenKey = 'auth_token';
-  static const String _pinKey = 'user_pin';
+  static const String _tokenKey = 'student_auth_token';
+  static const String _pinKey = 'student_secure_pin';
 
-  /// Menyimpan token otentikasi secara terenkripsi.
+  /// Menyimpan token autentikasi mahasiswa secara terenkripsi.
   Future<void> saveToken(String token) async {
     await _storage.write(key: _tokenKey, value: token);
-    // Logging aman (Safe Logging): TIDAK mencetak isi token
-    print('Token autentikasi berhasil disimpan ke secure storage.');
+    // Logging aman (Safe Logging): TIDAK mencetak token/plaintext rahasia
+    print('Token sesi mahasiswa berhasil disimpan secara aman.');
   }
 
-  /// Membaca token otentikasi dari secure storage.
+  /// Membaca token autentikasi mahasiswa.
   Future<String?> getToken() async {
     final token = await _storage.read(key: _tokenKey);
-    // Logging aman: hanya status keberadaan token
-    print(token != null ? 'Token ditemukan' : 'Token tidak ditemukan');
+    print(token != null ? 'Token sesi valid ditemukan.' : 'Token sesi tidak ditemukan.');
     return token;
   }
 
   /// Menghapus token (digunakan saat logout).
   Future<void> deleteToken() async {
     await _storage.delete(key: _tokenKey);
-    print('Token berhasil dihapus dari secure storage.');
+    print('Token sesi mahasiswa berhasil dihapus dari secure storage.');
   }
 
-  /// Memeriksa apakah token otentikasi sudah tersimpan.
+  /// Memeriksa status keberadaan token autentikasi.
   Future<bool> hasToken() async {
     return await _storage.containsKey(key: _tokenKey);
   }
 
-  /// Menyimpan PIN keamanan pengguna.
+  /// Menyimpan PIN keamanan mahasiswa.
   Future<void> savePin(String pin) async {
     await _storage.write(key: _pinKey, value: pin);
-    print('PIN keamanan berhasil disimpan.');
+    print('PIN keamanan akun berhasil diperbarui.');
   }
 
-  /// Membaca PIN keamanan pengguna.
+  /// Membaca PIN keamanan mahasiswa.
   Future<String?> getPin() async {
     return await _storage.read(key: _pinKey);
   }
 
-  /// Menghapus seluruh data di secure storage.
+  /// Menghapus semua data sensitif di secure storage.
   Future<void> deleteAll() async {
     await _storage.deleteAll();
-    print('Semua data aman berhasil dibersihkan.');
+    print('Seluruh data aman berhasil dibersihkan.');
   }
 }

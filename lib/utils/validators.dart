@@ -32,7 +32,19 @@ class Validators {
       return 'Email wajib diisi';
     }
     if (!isValidEmail(value)) {
-      return 'Format email tidak valid (contoh: user@mail.com)';
+      return 'Format email tidak valid (contoh: mhs@amikom.ac.id)';
+    }
+    return null;
+  }
+
+  /// Validasi NIM mahasiswa (angka berformat, minimal 8 digit).
+  static String? validateNim(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'NIM wajib diisi';
+    }
+    final clean = value.replaceAll('.', '').replaceAll('-', '').trim();
+    if (!RegExp(r'^[0-9]{8,12}$').hasMatch(clean)) {
+      return 'NIM harus berupa 8-12 digit angka (contoh: 22.11.4567)';
     }
     return null;
   }
@@ -65,19 +77,7 @@ class Validators {
     return null;
   }
 
-  /// Validasi nomor telepon (10-13 digit angka - Latihan 1 Pertemuan 3).
-  static String? validatePhone(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Nomor telepon wajib diisi';
-    }
-    final phoneRegex = RegExp(r'^[0-9]{10,13}$');
-    if (!phoneRegex.hasMatch(value.trim())) {
-      return 'Nomor telepon harus 10-13 digit angka';
-    }
-    return null;
-  }
-
-  /// Validasi angka bulat atau desimal positif.
+  /// Validasi angka bulat atau desimal positif (misal: SKS atau Semester).
   static String? validateNumber(String? value, String fieldName, {bool isInteger = false}) {
     if (value == null || value.trim().isEmpty) {
       return '$fieldName wajib diisi';
@@ -85,7 +85,7 @@ class Validators {
     if (isInteger) {
       final parsed = int.tryParse(value.trim());
       if (parsed == null || parsed <= 0) {
-        return '$fieldName harus berupa angka bulat positif';
+        return '$fieldName harus berupa bilangan bulat positif';
       }
     } else {
       final parsed = double.tryParse(value.trim());

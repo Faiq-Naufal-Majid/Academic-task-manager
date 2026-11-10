@@ -1,20 +1,20 @@
-/// Model representasi data tips kesehatan yang diambil dari REST API.
-class HealthTip {
+/// Model representasi data artikel tips belajar & produktivitas dari REST API.
+class StudyTip {
   final int id;
   final String title;
   final String body;
   final List<String> tags;
 
-  HealthTip({
+  StudyTip({
     required this.id,
     required this.title,
     required this.body,
     this.tags = const [],
   });
 
-  /// Factory method untuk parsing data JSON dari REST API.
-  factory HealthTip.fromJson(Map<String, dynamic> json) {
-    return HealthTip(
+  /// Factory constructor untuk parsing JSON dari response REST API.
+  factory StudyTip.fromJson(Map<String, dynamic> json) {
+    return StudyTip(
       id: json['id'] ?? 0,
       title: json['title'] ?? '',
       body: json['body'] ?? '',

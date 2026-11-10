@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import '../models/health_tip.dart';
+import '../models/study_tip.dart';
 
-/// Widget kartu presentasi untuk menampilkan item tips kesehatan dari REST API.
+/// Widget kartu presentasi untuk menampilkan item tips belajar & produktivitas dari REST API.
 ///
-/// Menyediakan tombol penanda favorit (Latihan Modul 4) serta aksi klik untuk
-/// menampilkan detail lengkap tips kesehatan dalam modal bottom sheet (Modul 5).
-class HealthTipCard extends StatelessWidget {
-  final HealthTip tip;
+/// Mendukung aksi toggle favorit (Pertemuan 4) dan tap untuk membuka modal bottom sheet detail (Pertemuan 5).
+class StudyTipCard extends StatelessWidget {
+  final StudyTip tip;
   final bool isFavorite;
   final VoidCallback? onFavoriteToggle;
   final VoidCallback? onTap;
 
-  const HealthTipCard({
+  const StudyTipCard({
     super.key,
     required this.tip,
     this.isFavorite = false,
@@ -37,9 +36,9 @@ class HealthTipCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CircleAvatar(
-                    backgroundColor: Colors.teal.shade100,
-                    foregroundColor: Colors.teal.shade800,
-                    child: const Icon(Icons.favorite, size: 20),
+                    backgroundColor: Colors.indigo.shade100,
+                    foregroundColor: Colors.indigo.shade800,
+                    child: const Icon(Icons.school, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -72,7 +71,7 @@ class HealthTipCard extends StatelessWidget {
                     IconButton(
                       icon: Icon(
                         isFavorite ? Icons.bookmark : Icons.bookmark_border,
-                        color: isFavorite ? Colors.teal : Colors.grey,
+                        color: isFavorite ? Colors.indigo : Colors.grey,
                       ),
                       tooltip: isFavorite ? 'Hapus dari favorit' : 'Simpan favorit',
                       onPressed: onFavoriteToggle,
@@ -87,15 +86,15 @@ class HealthTipCard extends StatelessWidget {
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.teal.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.teal.shade200),
+                        color: Colors.indigo.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.indigo.shade200),
                       ),
                       child: Text(
                         '#$tag',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.teal.shade800,
+                          color: Colors.indigo.shade800,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
